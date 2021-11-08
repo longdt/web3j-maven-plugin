@@ -89,10 +89,10 @@ public class JavaClassGeneratorMojo extends AbstractMojo {
         return path;
     }
 
-    private Map<String, Map<String, String>> extractContracts(String result) throws MojoExecutionException {
+    private Map<String, Map<String, Object>> extractContracts(String result) throws MojoExecutionException {
         JsonParser jsonParser = new JsonParser();
         Map<String, Object> json = jsonParser.parseJson(result);
-        Map<String, Map<String, String>> contracts = (Map<String, Map<String, String>>) json.get("contracts");
+        Map<String, Map<String, Object>> contracts = (Map<String, Map<String, Object>>) json.get("contracts");
         if (contracts == null) {
             getLog().warn("no contracts found");
             return null;
@@ -101,7 +101,7 @@ public class JavaClassGeneratorMojo extends AbstractMojo {
 
         HashSet<String> contractsKeys = new HashSet<>(contracts.keySet());
         for (String contractFilename : contractsKeys) {
-            Map<String, String> contractMetadata = contracts.get(contractFilename);
+            Map<String, Object> contractMetadata = contracts.get(contractFilename);
 
 //            String bin = contractMetadata.get("bin");
 //            if (bin == null || bin.length() == 0) {
@@ -110,13 +110,13 @@ public class JavaClassGeneratorMojo extends AbstractMojo {
 //                continue;
 //            }
 
-            String metadata = contractMetadata.get("metadata");
-            if (metadata == null || metadata.length() == 0) {
+            Object metadata = contractMetadata.get("metadata");
+            if (metadata == null || (metadata instanceof String && ((String) metadata).length() == 0)) {
                 contracts.remove(contractFilename);
                 continue;
             }
             getLog().debug("metadata:" + metadata);
-            Map<String, Object> metadataJson = jsonParser.parseJson(metadata);
+            Map<String, Object> metadataJson = jsonParser.parseJson(metadata.toString());
             Object settingsMap = metadataJson.get("settings");
             // FIXME this generates java files for interfaces with >org.ethereum:solcJ-all:0.5.2 , because the compiler generates now metadata.
             if (settingsMap != null) {
@@ -128,19 +128,19 @@ public class JavaClassGeneratorMojo extends AbstractMojo {
                     }
                 }
             }
-            Map<String, String> compiledContract = contracts.remove(contractFilename);
+            Map<String, Object> compiledContract = contracts.remove(contractFilename);
             String contractName = contractRemap.get(contractFilename);
             contracts.put(contractName, compiledContract);
         }
         return contracts;
     }
 
-    private void generatedJavaClass(Map<String, String> results, String contractName) throws IOException, ClassNotFoundException {
+    private void generatedJavaClass(Map<String, Object> results, String contractName) throws IOException, ClassNotFoundException {
         if (!StringUtils.containsIgnoreCase(outputFormat, "java")) {
             return;
         }
-        List<AbiDefinition> functionDefinitions = loadContractDefinition(results.get(SolidityCompiler.Options.ABI.getName()));
-        generatedJavaClass(contractName, functionDefinitions, results.get(SolidityCompiler.Options.BIN.getName()));
+        List<AbiDefinition> functionDefinitions = loadContractDefinition(results.get(SolidityCompiler.Options.ABI.getName()).toString());
+        generatedJavaClass(contractName, functionDefinitions, (String) results.get(SolidityCompiler.Options.BIN.getName()));
     }
 
     private void generatedJavaClass(String contractName, List<AbiDefinition> functionDefinitions, String bin) throws IOException, ClassNotFoundException {
@@ -236,12 +236,12 @@ public class JavaClassGeneratorMojo extends AbstractMojo {
         }
     }
 
-    private void generatedAbi(Map<String, String> contractResult, String contractName) {
+    private void generatedAbi(Map<String, Object> contractResult, String contractName) {
         if (!StringUtils.containsIgnoreCase(outputFormat, "abi")) {
             return;
         }
 
-        String abiJson = contractResult.get(SolidityCompiler.Options.ABI.getName());
+        String abiJson = contractResult.get(SolidityCompiler.Options.ABI.getName()).toString();
         try {
             String filename = contractName + ".json";
             Path path = createPath(StringUtils.defaultString(outputDirectory.getAbi(), sourceDestination));
@@ -251,12 +251,12 @@ public class JavaClassGeneratorMojo extends AbstractMojo {
         }
     }
 
-    private void generatedBin(Map<String, String> contractResult, String contractName) {
+    private void generatedBin(Map<String, Object> contractResult, String contractName) {
         if (!StringUtils.containsIgnoreCase(outputFormat, "bin")) {
             return;
         }
 
-        String binJson = contractResult.get(SolidityCompiler.Options.BIN.getName());
+        String binJson = contractResult.get(SolidityCompiler.Options.BIN.getName()).toString();
         try {
             String filename = contractName + ".bin";
             Path path = createPath(StringUtils.defaultString(outputDirectory.getBin(), sourceDestination));
@@ -300,19 +300,19 @@ public class JavaClassGeneratorMojo extends AbstractMojo {
     }
 
     private void processResult(String result, String warnMsg) throws MojoExecutionException {
-        Map<String, Map<String, String>> contracts = extractContracts(result);
+        Map<String, Map<String, Object>> contracts = extractContracts(result);
         if (contracts == null) {
             getLog().warn(warnMsg);
             return;
         }
-        for (Map.Entry<String, Map<String, String>> entry : contracts.entrySet()) {
+        for (Map.Entry<String, Map<String, Object>> entry : contracts.entrySet()) {
             String contractName = entry.getKey();
             if (isFiltered(contractName)) {
                 getLog().debug("\tContract '" + contractName + "' is filtered");
                 continue;
             }
             try {
-                Map<String, String> contractResult = entry.getValue();
+                Map<String, Object> contractResult = entry.getValue();
                 generatedJavaClass(contractResult, contractName);
                 generatedAbi(contractResult, contractName);
                 generatedBin(contractResult, contractName);
