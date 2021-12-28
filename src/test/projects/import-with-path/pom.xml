@@ -14,9 +14,9 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.web3j</groupId>
+                <groupId>com.github.longdt</groupId>
                 <artifactId>web3j-maven-plugin</artifactId>
-                <version>4.8.7</version>
+                <version>4.8.9</version>
                 <configuration>
                     <packageName>model</packageName>
                     <sourceDestination>src/test/generated</sourceDestination>

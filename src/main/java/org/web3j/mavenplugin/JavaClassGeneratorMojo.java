@@ -283,7 +283,6 @@ public class JavaClassGeneratorMojo extends AbstractMojo {
                 pathPrefixes,
                 SolidityCompiler.Options.ABI,
                 SolidityCompiler.Options.BIN,
-                SolidityCompiler.Options.INTERFACE,
                 SolidityCompiler.Options.METADATA
         );
         if (result.isFailed()) {
