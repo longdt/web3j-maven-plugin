@@ -9,13 +9,14 @@ web3j maven plugin is used to create java classes based on the solidity contract
 The base configuration for the plugin will take the solidity files from `src/main/resources` and generates 
 the java classes into the folder `src/main/java`.
 
+Use this artifact to support solidity version ^0.8.10
 ```xml
 <build>
     <plugins>
         <plugin>
-            <groupId>org.web3j</groupId>
+            <groupId>com.github.longdt</groupId>
             <artifactId>web3j-maven-plugin</artifactId>
-            <version>4.8.7</version>
+            <version>4.8.10</version>
             <configuration>
                 <soliditySourceFiles/>
             </configuration>
